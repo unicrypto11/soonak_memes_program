@@ -86,7 +86,7 @@ pub struct CreateComp<'info> {
 
     #[account(init_if_needed, payer = user, space = 8 + 8,  seeds = [b"prize_pool", token_address.key().as_ref()], bump)]
     pub prize_pool: Account<'info, PrizePool>,
-    /// CHECK: safe address
+    /// CHECK: safe address. no need to validate.
     pub token_address: UncheckedAccount<'info>,
 }
 
@@ -110,7 +110,7 @@ pub struct Donate2CompSol<'info> {
 
     #[account(mut)]
     pub user: Signer<'info>,
-    /// CHECK: safe
+    /// CHECK: checked account is safe. no need to validate.
     #[account(mut)]
     pub to: AccountInfo<'info>,
 
