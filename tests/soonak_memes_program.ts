@@ -13,4 +13,13 @@ describe("soonak_memes_program", () => {
     const tx = await program.methods.initialize().rpc();
     console.log("Your transaction signature", tx);
   });
+
+  it("Is Comp Created!", async () => {
+    // Add your test here.
+    const [compPda] = await anchor.web3.PublicKey.findProgramAddressSync([Buffer.from("comp")], program.programId);
+    const tx = await program.methods.createComp().rpc();
+    const comp = await program.account.comp.fetch(compPda);
+    console.log("comp", comp);
+    console.log("Your transaction signature", tx);
+  });
 });
