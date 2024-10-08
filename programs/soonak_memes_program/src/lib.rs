@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token::TokenProgram;
+use anchor_spl::token_interface::{TokenAccount, Mint, TokenInterface};
 
 declare_id!("GqPZ3xwsZqbuq76VwFv6i4N2QKuU4bdFYRrgMrehwmJf");
 
@@ -20,6 +20,28 @@ pub mod soonak_memes_program {
         comp.end_time = 0;
         Ok(())
     }
+
+    pub fn start_comp(ctx: Context<StartComp>) -> Result<()> {
+        msg!("Greetings from: {:?}", ctx.program_id);
+        let comp = &mut ctx.accounts.comp;
+        comp.start_time = Clock::get()?.unix_timestamp;
+        comp.end_time = comp.start_time + 30 * 24 * 60 * 60; // competition will go on for 30 days
+        Ok(())
+    }
+
+    pub fn donate_2_comp_sol(ctx: Context<Donate2CompSol>) -> Result<()> {
+        msg!("Greetings from: {:?}", ctx.program_id);
+        let prize_pool = &mut ctx.accounts.prize_pool;
+        prize_pool.total_amount += 1;
+        Ok(())
+    }
+
+    pub fn donate_2_comp_token(ctx: Context<Donate2CompToken>) -> Result<()> {
+        msg!("Greetings from: {:?}", ctx.program_id);
+        let prize_pool = &mut ctx.accounts.prize_pool;
+        prize_pool.total_amount += 1;
+        Ok(())
+    }
 }
 
 
@@ -29,7 +51,7 @@ pub struct Initialize {}
 
 #[derive(Accounts)]
 pub struct CreateComp<'info> {
-    #[account(init_if_needed, payer = user, space = 8 + 8 + 8 + 8,  seeds = [b"comp", token_address], bump)]
+    #[account(init_if_needed, payer = user, space = 8 + 8 + 8 + 8,  seeds = [b"comp", token_address.key().as_ref()], bump)]
     pub comp: Account<'info, Comp>,
 
     #[account(mut)]
@@ -37,10 +59,48 @@ pub struct CreateComp<'info> {
 
     pub system_program: Program<'info, System>,
 
-    // #[account(init_if_needed, payer = user, space = 8 + 8 + 8 + 8,  seeds = [b"prize_pool"], bump)]
-    // pub prize_pool: Account<'info, PrizePool>,
-    pub token_address: Account<'info, TokenProgram>,
+    #[account(init_if_needed, payer = user, space = 8 + 8,  seeds = [b"prize_pool", token_address.key().as_ref()], bump)]
+    pub prize_pool: Account<'info, PrizePool>,
+    /// CHECK: safe address
+    pub token_address: UncheckedAccount<'info>,
 }
+
+#[derive(Accounts)]
+pub struct StartComp<'info> {
+    #[account(mut)]
+    pub comp: Account<'info, Comp>,
+
+    #[account(mut)]
+    pub user: Signer<'info>,
+
+    #[account(mut)]
+    pub prize_pool: Account<'info, PrizePool>,
+}
+
+#[derive(Accounts)]
+pub struct Donate2CompSol<'info> {
+    #[account(mut)]
+    pub comp: Account<'info, Comp>,
+
+    #[account(mut)]
+    pub user: Signer<'info>,
+
+    #[account(mut)]
+    pub prize_pool: Account<'info, PrizePool>,
+}
+
+#[derive(Accounts)]
+pub struct Donate2CompToken<'info> {
+    #[account(mut)]
+    pub comp: Account<'info, Comp>,
+
+    #[account(mut)]
+    pub user: Signer<'info>,
+
+    #[account(mut)]
+    pub prize_pool: Account<'info, PrizePool>,
+}
+
 
 #[account]
 pub struct Comp {
