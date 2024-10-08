@@ -32,6 +32,8 @@ describe("soonak_memes_program", () => {
     console.log("ATA:", person1ATA.address.toString());
     const tx = await mintTo(provider.connection, payer, mintSC, person1ATA.address, mintAuthSC, 10 * anchor.web3.LAMPORTS_PER_SOL);
     console.log("TX", tx);
+    const balance = await provider.connection.getTokenAccountBalance(person1ATA.address);
+    console.log("balance:", balance);
   });
 
   it("Is initialized!", async () => {
@@ -89,7 +91,7 @@ describe("soonak_memes_program", () => {
     const prizePoolATA = await getOrCreateAssociatedTokenAccount(provider.connection, payer, mintSC, prizePoolPda, true);
     const preTokenBalance = await provider.connection.getTokenAccountBalance(prizePoolATA.address);
     console.log("pre token balance:", preTokenBalance);
-    const donateTokenTx = await program.methods.donate2CompToken(new anchor.BN(100_000_000)).accounts({comp: compPda, prizePool: prizePoolPda, user: person1.publicKey, fromTokenAccount: person1ATA.address, toTokenAccount: prizePoolATA.address}).rpc();
+    const donateTokenTx = await program.methods.donate2CompToken(new anchor.BN(100_000_000)).accounts({comp: compPda, prizePool: prizePoolPda, user: person1.publicKey, fromTokenAccount: person1ATA.address, toTokenAccount: prizePoolATA.address}).signers([person1]).rpc();
     console.log("Your transaction signature", donateTokenTx);
     const tokenBalance = await provider.connection.getTokenAccountBalance(prizePoolATA.address);
     console.log("token balance:", tokenBalance);
