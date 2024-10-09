@@ -17,6 +17,7 @@ describe("soonak_memes_program", () => {
   const person1 = anchor.web3.Keypair.generate();
   const person2 = anchor.web3.Keypair.generate();
   const payer = anchor.web3.Keypair.generate();
+  // const payer = provider.wallet.payer;
   const mintAuthSC = anchor.web3.Keypair.generate();
   const mintKeypairSC = anchor.web3.Keypair.generate();
   let mintSC: anchor.web3.PublicKey;
@@ -26,6 +27,7 @@ describe("soonak_memes_program", () => {
     await provider.connection.confirmTransaction(await provider.connection.requestAirdrop(payer.publicKey, 2 * anchor.web3.LAMPORTS_PER_SOL));
     await provider.connection.confirmTransaction(await provider.connection.requestAirdrop(person1.publicKey, 2 * anchor.web3.LAMPORTS_PER_SOL), "confirmed");
     await provider.connection.confirmTransaction(await provider.connection.requestAirdrop(person2.publicKey, 2 * anchor.web3.LAMPORTS_PER_SOL), "confirmed");
+    console.log("payer", payer);
     mintSC = await createMint(provider.connection, payer, mintAuthSC.publicKey, mintAuthSC.publicKey, 9, mintKeypairSC);
     console.log("Mint:", mintSC);
     person1ATA = await getOrCreateAssociatedTokenAccount(provider.connection, payer, mintSC, person1.publicKey);
@@ -95,6 +97,10 @@ describe("soonak_memes_program", () => {
     console.log("Your transaction signature", donateTokenTx);
     const tokenBalance = await provider.connection.getTokenAccountBalance(prizePoolATA.address);
     console.log("token balance:", tokenBalance);
+  });
+
+  it("submit meme to comp", async () => {
+    
   });
   
 });

@@ -67,6 +67,18 @@ pub mod soonak_memes_program {
         prize_pool.total_amount += 1;
         Ok(())
     }
+
+    pub fn submit_meme(ctx: Context<SubmitMeme>, name: String, url: String) -> Result<()> {
+        msg!("Greetings from: {:?}", ctx.program_id);
+        let comp = &mut ctx.accounts.comp;
+        let meme = Meme {
+            name,
+            url,
+            votes: 0,
+        };
+        comp.memes.push(meme);
+        Ok(())
+    }
 }
 
 
@@ -76,7 +88,7 @@ pub struct Initialize {}
 
 #[derive(Accounts)]
 pub struct CreateComp<'info> {
-    #[account(init_if_needed, payer = user, space = 8 + 8 + 8 + 8,  seeds = [b"comp", token_address.key().as_ref()], bump)]
+    #[account(init_if_needed, payer = user, space = 8 + 8 + 8 + 8 + 10 * std::mem::size_of::<Meme>(),  seeds = [b"comp", token_address.key().as_ref()], bump)]
     pub comp: Account<'info, Comp>,
 
     #[account(mut)]
@@ -84,7 +96,7 @@ pub struct CreateComp<'info> {
 
     pub system_program: Program<'info, System>,
 
-    #[account(init_if_needed, payer = user, space = 8 + 8,  seeds = [b"prize_pool", token_address.key().as_ref()], bump)]
+    #[account(init_if_needed, payer = user, space = 8 + 8 + 8 + 8 + 16,  seeds = [b"prize_pool", token_address.key().as_ref()], bump)]
     pub prize_pool: Account<'info, PrizePool>,
     /// CHECK: safe address. no need to validate.
     pub token_address: UncheckedAccount<'info>,
@@ -140,12 +152,27 @@ pub struct Donate2CompToken<'info> {
     pub prize_pool: Account<'info, PrizePool>,
 }
 
+#[derive(Accounts)]
+pub struct SubmitMeme<'info> {
+    #[account(mut)]
+    pub comp: Account<'info, Comp>,
+    #[account(mut)]
+    pub user: Signer<'info>,
+}
+
+#[account]
+pub struct Meme {
+    pub name: String,
+    pub url: String,
+    pub votes: u64,
+}
 
 #[account]
 pub struct Comp {
     pub create_time: i64,
     pub start_time: i64,
     pub end_time: i64,
+    pub memes: Vec<Meme>,
 }
 
 #[account]
