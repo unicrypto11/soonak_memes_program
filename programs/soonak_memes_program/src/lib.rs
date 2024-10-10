@@ -71,9 +71,11 @@ pub mod soonak_memes_program {
     pub fn submit_meme(ctx: Context<SubmitMeme>, name: String, url: String) -> Result<()> {
         msg!("Greetings from: {:?}", ctx.program_id);
         let comp = &mut ctx.accounts.comp;
+        let submitter = &ctx.accounts.user.to_account_info();
         let meme = Meme {
             name,
             url,
+            submitter: submitter.key(),
             votes: 0,
         };
         comp.memes.push(meme);
@@ -165,6 +167,7 @@ pub struct Meme {
     pub name: String,
     pub url: String,
     pub votes: u64,
+    pub submitter: Pubkey,
 }
 
 #[account]

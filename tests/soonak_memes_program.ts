@@ -60,12 +60,12 @@ describe("soonak_memes_program", () => {
     // Add your test here.
     const [compPda] = await anchor.web3.PublicKey.findProgramAddressSync([Buffer.from("comp"), new anchor.web3.PublicKey("GqPZ3xwsZqbuq76VwFv6i4N2QKuU4bdFYRrgMrehwmJf").toBuffer()], program.programId);
     const [prizePoolPda] = await anchor.web3.PublicKey.findProgramAddressSync([Buffer.from("prize_pool"), new anchor.web3.PublicKey("GqPZ3xwsZqbuq76VwFv6i4N2QKuU4bdFYRrgMrehwmJf").toBuffer()], program.programId);
-    const tx = await program.methods.createComp().accounts({ tokenAddress: "GqPZ3xwsZqbuq76VwFv6i4N2QKuU4bdFYRrgMrehwmJf" }).rpc();
+    // const tx = await program.methods.createComp().accounts({ tokenAddress: "GqPZ3xwsZqbuq76VwFv6i4N2QKuU4bdFYRrgMrehwmJf" }).rpc();
     const comp = await program.account.comp.fetch(compPda);
     const prize_pool = await program.account.prizePool.fetch(prizePoolPda);
     console.log("prize_pool:", prize_pool.totalAmount.toString());
     console.log("comp create time:", new Date(comp.createTime.toNumber() * 1000).toUTCString());
-    console.log("Your transaction signature", tx);
+    // console.log("Your transaction signature", tx);
     const preBalance = await provider.connection.getBalance(prizePoolPda);
     console.log("pre balance:", preBalance);
     const donateTx = await program.methods.donate2CompSol(new anchor.BN(100_000_000)).accounts({comp: compPda, prizePool: prizePoolPda, user: provider.wallet.publicKey, to: prizePoolPda}).rpc();
@@ -78,12 +78,12 @@ describe("soonak_memes_program", () => {
     // Add your test here.
     const [compPda] = await anchor.web3.PublicKey.findProgramAddressSync([Buffer.from("comp"), new anchor.web3.PublicKey("GqPZ3xwsZqbuq76VwFv6i4N2QKuU4bdFYRrgMrehwmJf").toBuffer()], program.programId);
     const [prizePoolPda] = await anchor.web3.PublicKey.findProgramAddressSync([Buffer.from("prize_pool"), new anchor.web3.PublicKey("GqPZ3xwsZqbuq76VwFv6i4N2QKuU4bdFYRrgMrehwmJf").toBuffer()], program.programId);
-    const tx = await program.methods.createComp().accounts({ tokenAddress: "GqPZ3xwsZqbuq76VwFv6i4N2QKuU4bdFYRrgMrehwmJf" }).rpc();
+    // const tx = await program.methods.createComp().accounts({ tokenAddress: "GqPZ3xwsZqbuq76VwFv6i4N2QKuU4bdFYRrgMrehwmJf" }).rpc();
     const comp = await program.account.comp.fetch(compPda);
     const prize_pool = await program.account.prizePool.fetch(prizePoolPda);
     console.log("prize_pool:", prize_pool.totalAmount.toString());
     console.log("comp create time:", new Date(comp.createTime.toNumber() * 1000).toUTCString());
-    console.log("Your transaction signature", tx);
+    // console.log("Your transaction signature", tx);
     const preBalance = await provider.connection.getBalance(prizePoolPda);
     console.log("pre balance:", preBalance);
     const donateTx = await program.methods.donate2CompSol(new anchor.BN(100_000_000)).accounts({comp: compPda, prizePool: prizePoolPda, user: provider.wallet.publicKey, to: prizePoolPda}).rpc();
@@ -100,7 +100,15 @@ describe("soonak_memes_program", () => {
   });
 
   it("submit meme to comp", async () => {
-    
+    const [compPda] = await anchor.web3.PublicKey.findProgramAddressSync([Buffer.from("comp"), new anchor.web3.PublicKey("GqPZ3xwsZqbuq76VwFv6i4N2QKuU4bdFYRrgMrehwmJf").toBuffer()], program.programId);
+    const comp = await program.account.comp.fetch(compPda);
+    console.log("comp create time:", new Date(comp.createTime.toNumber() * 1000).toUTCString());
+    const tx = await program.methods.submitMeme("Hello", "Test").accounts({comp: compPda}).rpc();
+    console.log("Your transaction signature", tx);
+    const memeData = await program.account.comp.fetch(compPda);
+    for (const meme of memeData.memes) {
+      console.log("meme:", meme);
+    }
   });
   
 });
