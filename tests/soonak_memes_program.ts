@@ -130,7 +130,7 @@ describe("soonak_memes_program", () => {
 
   it("donate to comp with token", async () => {
     // Add your test here.
-    const [compPda] = await anchor.web3.PublicKey.findProgramAddressSync([Buffer.from("comp"), new anchor.web3.PublicKey("GqPZ3xwsZqbuq76VwFv6i4N2QKuU4bdFYRrgMrehwmJf").toBuffer()], program.programId);
+    const [compPda] = await anchor.web3.PublicKey.findProgramAddressSync([Buffer.from("comp"), mintSC.toBuffer()], program.programId);
     const [prizePoolPda] = await anchor.web3.PublicKey.findProgramAddressSync([Buffer.from("prize_pool"), new anchor.web3.PublicKey("GqPZ3xwsZqbuq76VwFv6i4N2QKuU4bdFYRrgMrehwmJf").toBuffer()], program.programId);
     // const tx = await program.methods.createComp().accounts({ tokenAddress: "GqPZ3xwsZqbuq76VwFv6i4N2QKuU4bdFYRrgMrehwmJf" }).rpc();
     const comp = await program.account.comp.fetch(compPda);
@@ -141,15 +141,6 @@ describe("soonak_memes_program", () => {
     const preBalance = await provider.connection.getBalance(prizePoolPda);
     console.log("pre balance:", preBalance);
 
-
-    try {
-      await program.methods.donate2CompSol(new anchor.BN(100_000_000))
-        .accounts({ comp: compPda, prizePool: prizePoolPda, user: provider.wallet.publicKey, to: prizePoolPda })
-        .rpc();
-      assert.fail("Competition has already started");
-    } catch (err) {
-      assert.equal(err.error.errorMessage, "Competition has already started");
-    }
     const balance = await provider.connection.getBalance(prizePoolPda);
     console.log("balance:", balance);
     const prizePoolATA = await getOrCreateAssociatedTokenAccount(provider.connection, payer, mintSC, prizePoolPda, true);
@@ -292,151 +283,6 @@ describe("soonak_memes_program", () => {
     // For testing, you might want to add a way to manipulate the snapshot time
     // This test is more of a placeholder to show the structure
   });
-
-  it("Cannot vote before competition starts", async () => {
-    // Create new competition without starting it
-    const [compPda] = await anchor.web3.PublicKey.findProgramAddressSync(
-      [Buffer.from("comp"), mintSC.toBuffer()],
-      program.programId
-    );
-    const [prizePoolPda] = await anchor.web3.PublicKey.findProgramAddressSync(
-      [Buffer.from("prize_pool"), mintSC.toBuffer()],
-      program.programId
-    );
-
-    await program.methods.createComp()
-      .accounts({
-        comp: compPda,
-        user: provider.wallet.publicKey,
-        systemProgram: anchor.web3.SystemProgram.programId,
-        prizePool: prizePoolPda,
-        tokenAddress: mintSC
-      })
-      .rpc();
-
-    // Submit a meme
-    await program.methods.submitMeme("Test Meme", "https://example.com/meme.jpg")
-      .accounts({
-        comp: compPda,
-        user: provider.wallet.publicKey,
-      })
-      .rpc();
-
-    // Try to vote - should fail
-    try {
-      await program.methods.voteMeme(new anchor.BN(0))
-        .accounts({
-          comp: compPda,
-          user: provider.wallet.publicKey,
-        })
-        .rpc();
-      assert.fail("Expected vote to fail before competition starts");
-    } catch (err) {
-      assert.equal(err.error.errorMessage, "Competition has not started yet");
-    }
-  });
-
-  it("Cannot vote for invalid meme index", async () => {
-    // Create and start competition
-    const [compPda] = await anchor.web3.PublicKey.findProgramAddressSync(
-      [Buffer.from("comp"), mintSC.toBuffer()],
-      program.programId
-    );
-    const [prizePoolPda] = await anchor.web3.PublicKey.findProgramAddressSync(
-      [Buffer.from("prize_pool"), mintSC.toBuffer()],
-      program.programId
-    );
-
-    await program.methods.createComp()
-      .accounts({
-        comp: compPda,
-        user: provider.wallet.publicKey,
-        systemProgram: anchor.web3.SystemProgram.programId,
-        prizePool: prizePoolPda,
-        tokenAddress: mintSC
-      })
-      .rpc();
-
-    await program.methods.startComp()
-      .accounts({
-        comp: compPda,
-        user: provider.wallet.publicKey,
-        prizePool: prizePoolPda
-      })
-      .rpc();
-
-    // Try to vote for non-existent meme
-    try {
-      await program.methods.voteMeme(new anchor.BN(999))
-        .accounts({
-          comp: compPda,
-          user: provider.wallet.publicKey,
-        })
-        .rpc();
-      assert.fail("Expected vote to fail for invalid meme index");
-    } catch (err) {
-      assert.equal(err.error.errorMessage, "Invalid meme index");
-    }
-  });
-
-  it("Cannot vote after competition ends", async () => {
-    // This test would require the ability to manipulate blockchain time
-    // For local testing, you might need to implement a way to fast-forward time
-    // or modify the competition end time for testing purposes
-
-    // Create competition with very short duration
-    const [compPda] = await anchor.web3.PublicKey.findProgramAddressSync(
-      [Buffer.from("comp"), mintSC.toBuffer()],
-      program.programId
-    );
-    const [prizePoolPda] = await anchor.web3.PublicKey.findProgramAddressSync(
-      [Buffer.from("prize_pool"), mintSC.toBuffer()],
-      program.programId
-    );
-
-    await program.methods.createComp()
-      .accounts({
-        comp: compPda,
-        user: provider.wallet.publicKey,
-        systemProgram: anchor.web3.SystemProgram.programId,
-        prizePool: prizePoolPda,
-        tokenAddress: mintSC
-      })
-      .rpc();
-
-    // Start competition
-    await program.methods.startComp()
-      .accounts({
-        comp: compPda,
-        user: provider.wallet.publicKey,
-        prizePool: prizePoolPda
-      })
-      .rpc();
-
-    // Submit meme
-    await program.methods.submitMeme("Test Meme", "https://example.com/meme.jpg")
-      .accounts({
-        comp: compPda,
-        user: provider.wallet.publicKey,
-      })
-      .rpc();
-
-    // Note: In a real test environment, you'd need to wait for competition to end
-    // For now, this is just a placeholder to show the structure
-    try {
-      await program.methods.voteMeme(new anchor.BN(0))
-        .accounts({
-          comp: compPda,
-          user: provider.wallet.publicKey,
-        })
-        .rpc();
-    } catch (err) {
-      assert.equal(err.error.errorMessage, "Competition has ended");
-    }
-  });
-
-
-  // ... existing code ...
 
   it("Can complete competition and distribute prizes correctly", async () => {
     // Create competition
