@@ -84,6 +84,39 @@ describe("soonak_memes_program", () => {
     console.log("Your transaction signature", tx);
   });
 
+  it("Only one competition can be created for one token!", async () => {
+    // Add your test here.
+    const [compPda] = await anchor.web3.PublicKey.findProgramAddressSync([Buffer.from("comp"), new anchor.web3.PublicKey("GqPZ3xwsZqbuq76VwFv6i4N2QKuU4bdFYRrgMrehwmJf").toBuffer()], program.programId);
+    const [prizePoolPda] = await anchor.web3.PublicKey.findProgramAddressSync([Buffer.from("prize_pool"), new anchor.web3.PublicKey("GqPZ3xwsZqbuq76VwFv6i4N2QKuU4bdFYRrgMrehwmJf").toBuffer()], program.programId);
+    const tx = await program.methods.createComp().accounts({ tokenAddress: "GqPZ3xwsZqbuq76VwFv6i4N2QKuU4bdFYRrgMrehwmJf" }).rpc();
+    const comp = await program.account.comp.fetch(compPda);
+    const prize_pool = await program.account.prizePool.fetch(prizePoolPda);
+
+    // Try to create another competition with the same token address
+    const [compPda2] = await anchor.web3.PublicKey.findProgramAddressSync(
+      [Buffer.from("comp"), new anchor.web3.PublicKey("GqPZ3xwsZqbuq76VwFv6i4N2QKuU4bdFYRrgMrehwmJf").toBuffer()],
+      program.programId
+    );
+    const [prizePoolPda2] = await anchor.web3.PublicKey.findProgramAddressSync(
+      [Buffer.from("prize_pool"), new anchor.web3.PublicKey("GqPZ3xwsZqbuq76VwFv6i4N2QKuU4bdFYRrgMrehwmJf").toBuffer()],
+      program.programId
+    );
+
+    try {
+      const tx2 = await program.methods.createComp()
+        .accounts({
+          comp: compPda2,
+          user: provider.wallet.publicKey,
+          systemProgram: anchor.web3.SystemProgram.programId,
+          prizePool: prizePoolPda2,
+          tokenAddress: "GqPZ3xwsZqbuq76VwFv6i4N2QKuU4bdFYRrgMrehwmJf"
+        })
+        .rpc();
+    } catch (error) {
+      console.log("Error:", error);
+    }
+  });
+
   it("Get created comps!", async () => {
     // Fetch all accounts of type Comp
     const allComps = await program.account.comp.all();
@@ -176,26 +209,6 @@ describe("soonak_memes_program", () => {
       [Buffer.from("prize_pool"), mintSC.toBuffer()],
       program.programId
     );
-
-    // Create competition
-    await program.methods.createComp()
-      .accounts({
-        comp: compPda,
-        user: provider.wallet.publicKey,
-        systemProgram: anchor.web3.SystemProgram.programId,
-        prizePool: prizePoolPda,
-        tokenAddress: mintSC
-      })
-      .rpc();
-
-    // Start competition
-    await program.methods.startComp()
-      .accounts({
-        comp: compPda,
-        user: provider.wallet.publicKey,
-        prizePool: prizePoolPda
-      })
-      .rpc();
 
     // Submit a meme
     const memeName = "Test Meme";
@@ -459,6 +472,28 @@ describe("soonak_memes_program", () => {
     // Verify competition is marked as finished
     const finalCompState = await program.account.comp.fetch(compPda);
     assert.isTrue(finalCompState.isFinished, "Competition should be marked as finished");
+  });
+
+  it("Prints all competitions' status", async () => {
+    const competitions = await program.account.comp.all();
+    competitions.forEach((comp) => {
+      console.log(`Competition ID: ${comp.publicKey.toString()}`);
+      console.log(`Status: ${comp.account.isFinished ? 'Finished' : 'Active'}`);
+      console.log(`Start Time: ${new Date(comp.account.startTime.toNumber() * 1000).toISOString()}`);
+      console.log(`End Time: ${new Date(comp.account.endTime.toNumber() * 1000).toISOString()}`);
+      console.log(`Donation End Time: ${new Date(comp.account.donationEndTime.toNumber() * 1000).toISOString()}`);
+      console.log(`Last Snapshot Time: ${new Date(comp.account.lastSnapshotTime.toNumber() * 1000).toISOString()}`);
+      console.log(`Memes Count: ${comp.account.memes.length}`);
+      console.log('Memes:');
+      comp.account.memes.forEach((meme, index) => {
+        console.log(`  Meme ${index + 1}:`);
+        console.log(`    Name: ${meme.name}`);
+        console.log(`    URL: ${meme.url}`);
+        console.log(`    Votes: ${meme.votes.toNumber()}`);
+        console.log(`    Submitter: ${meme.submitter.toString()}`);
+      });
+      console.log('----------------');
+    });
   });
 
 
