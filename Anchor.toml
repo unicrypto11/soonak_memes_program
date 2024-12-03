@@ -5,7 +5,7 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-soonak_memes_program = "GqPZ3xwsZqbuq76VwFv6i4N2QKuU4bdFYRrgMrehwmJf"
+soonak_memes_program = "33zHE6FfLcuaey1eTv6d1zrwuy7EdwnhURyDXuytT13F"
 
 [registry]
 url = "https://api.apr.dev"
@@ -19,3 +19,5 @@ test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
 
 [test]
 startup_wait = 1000000
+shutdown_wait = 2000
+upgradeable = false
